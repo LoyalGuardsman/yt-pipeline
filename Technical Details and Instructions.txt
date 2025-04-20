@@ -1,0 +1,41 @@
+1. Create a .env file in the root of the project by copying the provided example
+2. Open .env and fill in the required fields like your YouTube API key
+3. Install Docker Desktop
+4. In the root project folder, start all services:
+docker-compose up --build
+This will start:
+
+Airflow
+Kafka + Zookeeper
+PostgreSQL
+Streamlit Dashboard
+
+To stop everything:
+
+docker-compose down -v
+
+5. Access the interfaces:
+
+Airflow Web UI:
+http://localhost:8080
+Login: admin / admin
+
+Streamlit dashboard:
+http://localhost:8501
+Select a region to view top videos and category stats.
+
+How the pipeline works:
+
+1. Airflow triggers a DAG every 2 minutes
+
+2. Python scripts fetch trending YouTube data by region
+
+3. Data is streamed to Kafka topics
+
+4. Kafka saves the data to CSV/JSON
+
+5. Processed data is loaded into PostgreSQL
+
+6. The Streamlit dashboard displays the data by region
+
+PostgreSQL can be inspected with tools like pgAdmin4.
