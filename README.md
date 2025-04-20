@@ -4,7 +4,7 @@ An end-to-end Youtube Trending data pipeline built with Python and containerized
 This project automates the process of ingesting, processing, storing, and visualizing trending video data
 across multiple regions using:
 
-Python - Core language for data ingestion, processing and visualization (pandas, psycopg2, kafka-python)
+Python - Core language for data ingestion, processing and visualization (pandas, psycopg2, kafka)
 
 Docker - Manages isolated environments for all services (Airflow, Kafka, PostgreSQL, Streamlit)
 
