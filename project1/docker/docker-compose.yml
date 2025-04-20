@@ -1,0 +1,142 @@
+# This is the multi-container setup for the Youtube trending data pipeline.
+# Containerized YouTube trending data pipeline using:
+# - Apache Airflow for orchestration
+# - Kafka + Zookeeper for real-time data flow
+# - PostgreSQL for storage
+# - Streamlit for visualization
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+  
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    restart: always
+
+  airflow-webserver:
+    image: apache/airflow:2.7.2
+    depends_on:
+      - postgres
+    env_file:
+      - ../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      PYTHONPATH: /opt/airflow
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/plugins:/opt/airflow/plugins
+      - ../data_ingestion:/opt/airflow/data_ingestion
+      - ../utils:/opt/airflow/utils
+      - ../save_trending_data.py:/opt/airflow/save_trending_data.py
+      - ../process_data.py:/opt/airflow/process_data.py
+      - ../config.py:/opt/airflow/config.py
+      - ../data_lake:/opt/airflow/data_lake
+      - ../load_to_postgres.py:/opt/airflow/load_to_postgres.py
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: always
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.2
+    depends_on:
+      - postgres
+    env_file:
+      - ../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      PYTHONPATH: /opt/airflow
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/plugins:/opt/airflow/plugins
+      - ../data_ingestion:/opt/airflow/data_ingestion
+      - ../utils:/opt/airflow/utils
+      - ../save_trending_data.py:/opt/airflow/save_trending_data.py
+      - ../process_data.py:/opt/airflow/process_data.py
+      - ../config.py:/opt/airflow/config.py
+      - ../data_lake:/opt/airflow/data_lake
+      - ../load_to_postgres.py:/opt/airflow/load_to_postgres.py
+    command: scheduler
+    restart: always
+
+  airflow-init:
+    image: apache/airflow:2.7.2
+    depends_on:
+      - postgres
+    env_file:
+      - ../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      PYTHONPATH: /opt/airflow
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/plugins:/opt/airflow/plugins
+      - ../data_ingestion:/opt/airflow/data_ingestion
+      - ../utils:/opt/airflow/utils
+      - ../save_trending_data.py:/opt/airflow/save_trending_data.py
+      - ../process_data.py:/opt/airflow/process_data.py
+      - ../config.py:/opt/airflow/config.py
+      - ../data_lake:/opt/airflow/data_lake
+      - ../load_to_postgres.py:/opt/airflow/load_to_postgres.py
+    command: bash -c "airflow db init && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin"
+    restart: on-failure
+
+  streamlit_dashboard:
+    build:
+      context: ../
+      dockerfile: dockerfile
+    container_name: streamlit_dashboard
+    volumes:
+      - ../:/app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - postgres
+    environment:
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      DB_NAME: airflow
+      DB_HOST: postgres
+    networks:
+      - default
+
+volumes:
+  postgres-db-volume:

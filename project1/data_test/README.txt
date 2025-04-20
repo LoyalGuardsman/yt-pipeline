@@ -1,0 +1,1 @@
+This data folder is where generated files from tests will be stored.
