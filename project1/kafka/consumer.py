@@ -8,7 +8,7 @@ from kafka import KafkaConsumer
 from dotenv import load_dotenv
 from utils.file_saver import save_video_to_csv_and_json
 
-# Kafka consumer script for YouTube trending data pipeline
+# Kafka consumer script
 
 load_dotenv()
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
