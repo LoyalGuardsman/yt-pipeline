@@ -16,5 +16,5 @@ PostgreSQL - Stores structured video and category data
 
 Streamlit - Provides an interactive dashboard to explore top videos and categories
 
-The pipeline fetches live data from the Youtube API, processes it with Python scripts managed by Airflow,
+The pipeline fetches live data from the Youtube API, processes it with Python scripts managed by Airflow, streams it via Kafka,
 stores it in PostgreSQL, and presents it via a dockerized Streamlit dashboard.
