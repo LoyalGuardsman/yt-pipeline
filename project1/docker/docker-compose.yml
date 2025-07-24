@@ -1,7 +1,6 @@
 # This is the multi-container setup for the Youtube trending data pipeline.
-# Containerized YouTube trending data pipeline using:
 # - Apache Airflow for orchestration
-# - Kafka + Zookeeper for real-time data flow
+# - Kafka for real-time data flow
 # - PostgreSQL for storage
 # - Streamlit for visualization
 
